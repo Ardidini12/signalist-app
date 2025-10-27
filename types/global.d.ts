@@ -73,6 +73,7 @@ declare global {
         email: string;
     };
 
+    type UserForNewsEmail = Pick<User, 'id' | 'email' | 'name'>;
     type Stock = {
         symbol: string;
         name: string;
