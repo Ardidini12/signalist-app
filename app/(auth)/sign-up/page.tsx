@@ -1,39 +1,48 @@
-"use client";
+'use client';
+
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import InputField from "@/components/forms/InputField";
 import SelectField from "@/components/forms/SelectField";
-import { CountrySelectField } from "@/components/forms/CountrySelectField";
 import { INVESTMENT_GOALS, PREFERRED_INDUSTRIES, RISK_TOLERANCE_OPTIONS } from "@/lib/constants";
+import { CountrySelectField } from "@/components/forms/CountrySelectField";
 import FooterLink from "@/components/forms/FooterLink";
+import { signUpWithEmail } from "@/lib/actions/auth.actions";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+
 
 const SignUp = () => {
+    const router = useRouter()
     const {
         register,
         handleSubmit,
         control,
-        formState: { errors, isSubmitting }
-    }
-        = useForm<SignUpFormData>({
-            defaultValues: {
-                fullName: "",
-                email: "",
-                password: "",
-                country: "",
-                investmentGoals: "",
-                riskTolerance: "",
-                preferredIndustry: ""
-            },
-            mode: 'onBlur'
-        });
+        formState: { errors, isSubmitting },
+    } = useForm<SignUpFormData>({
+        defaultValues: {
+            fullName: '',
+            email: '',
+            password: '',
+            country: '',
+            investmentGoals: '',
+            riskTolerance: '',
+            preferredIndustry: ''
+        },
+        mode: 'onBlur'
+    },);
+
     const onSubmit = async (data: SignUpFormData) => {
         try {
-            console.log(data);
-        } catch (error) {
-            console.log(error);
+            const result = await signUpWithEmail(data);
+            if (result.success) router.push('/');
+        } catch (e) {
+            console.error(e);
+            toast.error('Sign up failed', {
+                description: e instanceof Error ? e.message : 'Failed to create an account.'
+            })
         }
     }
-
     return (
         <>
             <h1 className="form-title">Sign Up & Personalize</h1>
@@ -45,15 +54,15 @@ const SignUp = () => {
                     placeholder="John Doe"
                     register={register}
                     error={errors.fullName}
-                    validation={{ required: 'Full Name is required', minLength: 2 }}
+                    validation={{ required: 'Full name is required', minLength: 2 }}
                 />
                 <InputField
                     name="email"
                     label="Email"
-                    placeholder="johndoe@example.com"
+                    placeholder="trader@signalist.com"
                     register={register}
                     error={errors.email}
-                    validation={{ required: 'Email is required', pattern: /^w+@\w+\.\w+$/, message: 'Email address is required' }}
+                    validation={{ required: 'Email name is required', pattern: /^\w+@\w+\.\w+$/, message: 'Email address is required' }}
                 />
                 <InputField
                     name="password"
@@ -111,12 +120,11 @@ const SignUp = () => {
                     {isSubmitting ? 'Creating Account' : 'Start Your Investing Journey'}
                 </Button>
 
-                <FooterLink text = "Already have an account?" linkText="Sign in" href="sign-in" />
-            </form>
+                <FooterLink text="Already have an account?" linkText="Sign in" href="/sign-in" />            </form>
 
         </>
     )
 }
 
 
-export default SignUp
+export default SignUp;
