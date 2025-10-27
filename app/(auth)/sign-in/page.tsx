@@ -1,46 +1,56 @@
-"use client";
-import { useForm } from "react-hook-form";
-import { Button } from "@/components/ui/button";
-import InputField from "@/components/forms/InputField";
-import FooterLink from "@/components/forms/FooterLink";
+'use client';
+
+import { useForm } from 'react-hook-form';
+import { Button } from '@/components/ui/button';
+import InputField from '@/components/forms/InputField';
+import FooterLink from '@/components/forms/FooterLink';
+import {signInWithEmail, signUpWithEmail} from "@/lib/actions/auth.actions";
+import {toast} from "sonner";
+import {signInEmail} from "better-auth/api";
+import {useRouter} from "next/navigation";
+
 const SignIn = () => {
+    const router = useRouter()
     const {
         register,
         handleSubmit,
-        control,
-        formState: { errors, isSubmitting }
-    }
-        = useForm<SignUpFormData>({
-            defaultValues: {
-                email: "",
-                password: "",
-            },
-            mode: 'onBlur'
-        });
-    const onSubmit = async (data: SignUpFormData) => {
+        formState: { errors, isSubmitting },
+    } = useForm<SignInFormData>({
+        defaultValues: {
+            email: '',
+            password: '',
+        },
+        mode: 'onBlur',
+    });
+
+    const onSubmit = async (data: SignInFormData) => {
         try {
-            console.log(data);
-        } catch (error) {
-            console.log(error);
+            const result = await signInWithEmail(data);
+            if(result.success) router.push('/');
+        } catch (e) {
+            console.error(e);
+            toast.error('Sign in failed', {
+                description: e instanceof Error ? e.message : 'Failed to sign in.'
+            })
         }
+    
     }
     return (
         <>
             <h1 className="form-title">Welcome back</h1>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-
                 <InputField
                     name="email"
                     label="Email"
-                    placeholder="johndoe@example.com"
+                    placeholder="trader@signalist.com"
                     register={register}
                     error={errors.email}
-                    validation={{ required: 'Email is required', pattern: /^w+@\w+\.\w+$/, message: 'Email address is required' }}
+                    validation={{ required: 'Email is required', pattern: /^\w+@\w+\.\w+$/ }}
                 />
                 <InputField
                     name="password"
                     label="Password"
-                    placeholder="Enter a strong password"
+                    placeholder="Enter your password"
                     type="password"
                     register={register}
                     error={errors.password}
@@ -51,11 +61,11 @@ const SignIn = () => {
                     {isSubmitting ? 'Signing In' : 'Sign In'}
                 </Button>
 
-                <FooterLink text = "Don't have an account?" linkText="Create an account" href="sign-up" />
+                <FooterLink text="Don't have an account?" linkText="Create an account" href="/sign-up" />
             </form>
 
         </>
-    )
-}
+    );
+};
 
-export default SignIn
+export default SignIn;
