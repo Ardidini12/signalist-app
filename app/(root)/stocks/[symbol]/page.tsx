@@ -17,7 +17,12 @@ export default async function StockDetails({ params }: StockDetailsPageProps) {
   const { symbol } = await params;
   const scriptUrl = `https://s3.tradingview.com/external-embedding/embed-widget-`;
 
-  const stockData = await getStocksDetails(symbol.toUpperCase());
+  let stockData = null;
+  try {
+    stockData = await getStocksDetails(symbol.toUpperCase());
+  } catch {
+    notFound();
+  }
   const watchlist = await getUserWatchlist();
 
   const isInWatchlist = watchlist.some(
@@ -25,7 +30,6 @@ export default async function StockDetails({ params }: StockDetailsPageProps) {
   );
 
   if (!stockData) notFound();
-
   return (
     <div className='flex min-h-screen p-4 md:p-6 lg:p-8'>
       <section className='grid grid-cols-1 md:grid-cols-2 gap-8 w-full'>
