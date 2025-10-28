@@ -129,22 +129,20 @@ export const searchStocks = cache(async (query?: string): Promise<StockWithWatch
           })
         );
   
+        const exchangeMap = new Map<string, string>();
         results = profiles
           .map(({ sym, profile }) => {
             const symbol = sym.toUpperCase();
             const name: string | undefined = profile?.name || profile?.ticker || undefined;
             const exchange: string | undefined = profile?.exchange || undefined;
             if (!name) return undefined;
+            if (exchange) exchangeMap.set(symbol, exchange);
             const r: FinnhubSearchResult = {
               symbol,
               description: name,
               displaySymbol: symbol,
               type: 'Common Stock',
             };
-            // We don't include exchange in FinnhubSearchResult type, so carry via mapping later using profile
-            // To keep pipeline simple, attach exchange via closure map stage
-            // We'll reconstruct exchange when mapping to final type
-            (r as any).__exchange = exchange; // internal only
             return r;
           })
           .filter((x): x is FinnhubSearchResult => Boolean(x));
