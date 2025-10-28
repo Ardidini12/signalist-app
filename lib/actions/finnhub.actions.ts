@@ -154,13 +154,50 @@ export const searchStocks = cache(async (query?: string): Promise<StockWithWatch
         results = Array.isArray(data?.result) ? data.result : [];
       }
   
+      // Resolve exchange properly: for search results, fetch profile2 for each unique symbol
+      // and use its exchange. Do not infer exchange from displaySymbol and do not default to 'US'.
+      const symbolToExchange: Record<string, string | undefined> = {};
+
+      if (trimmed) {
+        const uniqueSymbols = Array.from(
+          new Set(
+            results
+              .map((r) => (r.symbol || '').toUpperCase())
+              .filter((s): s is string => Boolean(s))
+          )
+        );
+
+        const profiles = await Promise.all(
+          uniqueSymbols.map(async (sym) => {
+            try {
+              const url = `${FINNHUB_BASE_URL}/stock/profile2?symbol=${encodeURIComponent(sym)}&token=${token}`;
+              const profile = await fetchJSON<any>(url, 3600);
+              return { sym, exchange: (profile?.exchange as string | undefined) } as { sym: string; exchange: string | undefined };
+            } catch (e) {
+              console.error('Error fetching profile2 for', sym, e);
+              return { sym, exchange: undefined } as { sym: string; exchange: string | undefined };
+            }
+          })
+        );
+
+        for (const p of profiles) {
+          symbolToExchange[p.sym] = p.exchange;
+        }
+      } else {
+        // Popular symbols branch already attempted to fetch profiles and stored __exchange; copy into the map.
+        for (const r of results) {
+          const sym = (r.symbol || '').toUpperCase();
+          const ex = (r as any).__exchange as string | undefined;
+          if (sym) symbolToExchange[sym] = ex;
+        }
+      }
+
       const mapped: StockWithWatchlistStatus[] = results
         .map((r) => {
           const upper = (r.symbol || '').toUpperCase();
           const name = r.description || upper;
-          const exchangeFromDisplay = (r.displaySymbol as string | undefined) || undefined;
-          const exchangeFromProfile = (r as any).__exchange as string | undefined;
-          const exchange = exchangeFromDisplay || exchangeFromProfile || 'US';
+          const exchangeFromProfile = symbolToExchange[upper] ?? ((r as any).__exchange as string | undefined);
+          const exchange = exchangeFromProfile ?? 'UNKNOWN'; // sentinel to avoid mislabeling
           const type = r.type || 'Stock';
           const item: StockWithWatchlistStatus = {
             symbol: upper,
