@@ -124,23 +124,26 @@ export const getWatchlistWithData = async () => {
 
     const stocksWithData = await Promise.all(
       watchlist.map(async (item) => {
-        const stockData = await getStocksDetails(item.symbol);
-
-        if (!stockData) {
-          console.warn(`Failed to fetch data for ${item.symbol}`);
-          return item;
+        try {
+          const stockData = await getStocksDetails(item.symbol);
+          if (!stockData) throw new Error('No data');
+          return {
+            company: stockData.company,
+            symbol: stockData.symbol,
+            currentPrice: stockData.currentPrice,
+            priceFormatted: stockData.priceFormatted,
+            changeFormatted: stockData.changeFormatted,
+            changePercent: stockData.changePercent,
+            marketCap: stockData.marketCapFormatted,
+            peRatio: stockData.peRatio,
+          };
+        } catch (e) {
+          console.warn(`Failed to fetch data for ${item.symbol}`, e);
+          return {
+            company: item.company,
+            symbol: item.symbol,
+          };
         }
-
-        return {
-          company: stockData.company,
-          symbol: stockData.symbol,
-          currentPrice: stockData.currentPrice,
-          priceFormatted: stockData.priceFormatted,
-          changeFormatted: stockData.changeFormatted,
-          changePercent: stockData.changePercent,
-          marketCap: stockData.marketCapFormatted,
-          peRatio: stockData.peRatio,
-        };
       }),
     );
 
